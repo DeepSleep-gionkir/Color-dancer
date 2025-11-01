@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>👻 에코 점퍼 (v6.0 - Push & Pull)</title>
+    <title>👻 에코 점퍼 (v6.1 - Attack Buffs)</title>
     <style>
         /* --- 기본 및 레이아웃 --- */
         html, body {
@@ -24,9 +24,9 @@
         #game-container {
             position: relative;
             width: 100%;
-            max-width: 800px; /* (수정) PC 화면 확장 */
+            max-width: 800px; 
             height: 100%;
-            max-height: 900px; /* (수정) PC 화면 확장 */
+            max-height: 900px; 
             overflow: hidden;
             background-color: #2a2a3e; /* 묘지 배경색 */
             border: 2px solid #50507a;
@@ -139,16 +139,14 @@
             height: 100%;
             background-color: rgba(10, 10, 20, 0.95);
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
             transition: opacity 0.3s ease, visibility 0.3s;
             visibility: hidden;
             opacity: 0;
             z-index: 10;
-            padding: 20px; /* ◀◀◀ 이 부분이 누락되었습니다 */
-            box-sizing: border-box; /* ◀◀◀ 이 부분이 누락되었습니다 */
         }
 
         .overlay.visible {
@@ -230,7 +228,7 @@
             display: none; 
             flex-grow: 1; 
             width: 100%;
-            max-width: 500px; /* (수정) 너비 늘림 */
+            max-width: 500px; 
             overflow-y: auto; 
             text-align: left;
             padding: 10px;
@@ -268,7 +266,7 @@
             border-radius: 3px;
         }
         
-        /* --- 레벨 업 오버레이 (수정됨) --- */
+        /* --- 레벨 업 오버레이 --- */
         #level-up-overlay {
             justify-content: center;
             gap: 20px;
@@ -367,7 +365,7 @@
                         <li><b>숙주 (◻️🔵):</b> <b>공격</b>을 할 수 있는 유일한 상태입니다. <b>경험치를 수집할 수 없습니다.</b></li>
                         <li><b>빙의 (Push):</b> 유령 상태에서 탭/클릭하면 가장 가까운 적에게 **빠르게 돌진**하여 '빙의'합니다.</li>
                         <li><b>빙의 해제 (Pull):</b> 숙주 상태에서 탭/클릭하면, <b>즉시 빙의를 해제</b>하고 안전한 '무적 유령' 상태로 돌아옵니다.</li>
-                        <li><b>숙주 피격:</b> 숙주 상태에서 적과 닿으면, 게이지가 추가로 <b>더 빨리 닳습니다!</b></li>
+                        <li><b>(중요) 숙주 피격:</b> 숙주 상태에서 적과 닿으면, 게이지가 추가로 <b>더 빨리 닳습니다!</b></li>
                     </ul>
                     
                     <h3>2. 몬스터(숙주) 특징</h3>
@@ -378,13 +376,11 @@
                         <li><b>🩶 가고일 (HP: 10):</b> [광역/방어형] 2초마다 주변에 '지진'을 일으켜 피해를 줍니다. 게이지가 매우 깁니다.</li>
                         <li><b>🟢 슬라임 (HP: 6):</b> [탱커] 느린 '슬라임볼'을 쏩니다. 매우 느리고 튼튼합니다.</li>
                         <li><b>❤️ 임프 (HP: 1):</b> [유리대포] 강력한 '파이어볼'을 쏩니다. 빠르지만 게이지가 짧습니다.</li>
-                        <li><b>(중요) 몬스터 HP:</b> 모든 몬스터의 HP는 <b>시간이 지날수록 점점 더 증가</b>합니다.</li>
                     </ul>
                     
                     <h3>⭐ 3. 엘리트 몬스터 ⭐</h3>
                     <ul>
-                        <li>낮은 확률로 <b>노란색(🟡)</b>으로 빛나며 <b>왕관(👑)</b>을 쓴 '엘리트' 몬스터가 등장합니다.</li>
-                        <li>엘리트 몬스터는 <b>기본 HP가 매우 높고(예: +10), 시간이 지날수록 더 강해집니다.</b></li>
+                        <li>낮은 확률로 <b>노란색(🟡)</b>으로 빛나며 <b>왕관(👑)</b>을 쓴 '엘리트' 몬스터가 등장합니다. (HP 2배)</li>
                         <li>엘리트 몬스터에게 빙의하면 <b>강화된 스킬</b>을 사용합니다!</li>
                         <li>(예: "트리플 샷", "영혼 수복" 등)</li>
                     </ul>
@@ -467,9 +463,9 @@
 
             // --- 몬스터/플레이어/업그레이드 정의 (수정됨) ---
             const PLAYER_COLOR = '#00FFFF';
-            const PLAYER_RADIUS = 3 * PIXEL_SCALE; // (수정) 4 -> 3
-            const PLAYER_SPEED_WISP = 3.0; // (수정) 2.5 -> 3.0
-            const PLAYER_DASH_SPEED = 10; // (새로 추가)
+            const PLAYER_RADIUS = 3 * PIXEL_SCALE; // 4 -> 3
+            const PLAYER_SPEED_WISP = 3.0; 
+            const PLAYER_DASH_SPEED = 10; 
             const ELITE_COLOR = '#FFFF00'; 
             const CROWN_SPRITE = ['111','101','010']; 
 
@@ -490,17 +486,21 @@
             const MOB_TYPES = Object.keys(MOB_PROPERTIES);
             
             const UPGRADE_POOL = [
-                { id: 'gauge_1', title: '숙주 안정화 I', desc: '빙의 게이지 총량이 15% 증가합니다.', apply: () => player.stats.maxGaugeMult += 0.15 },
-                { id: 'wisp_speed_1', title: '유령 기동력 I', desc: '유령 상태의 이동 속도가 10% 증가합니다.', apply: () => player.stats.wispSpeedMult += 0.1 },
+                { id: 'gauge_1', title: '숙주 안정화 I', desc: '빙의 게이지 총량이 20% 증가합니다.', apply: () => player.stats.maxGaugeMult += 0.20 }, // (수정) 0.15 -> 0.20
+                { id: 'wisp_speed_1', title: '유령 기동력 I', desc: '유령 상태의 이동 속도가 20% 증가합니다.', apply: () => player.stats.wispSpeedMult += 0.20 }, // (수정) 0.1 -> 0.2
                 { id: 'jump_nova', title: '소울 노바', desc: '새로운 숙주로 \'빙의\'할 때 주변에 폭발을 일으킵니다.', apply: () => player.stats.jumpNova = true },
-                { id: 'attack_speed_1', title: '공격 속도 I', desc: '숙주의 공격 속도가 10% 증가합니다.', apply: () => player.stats.attackSpeedMult += 0.1 },
+                { id: 'attack_speed_1', title: '공격 속도 I', desc: '숙주의 공격 속도가 20% 증가합니다.', apply: () => player.stats.attackSpeedMult += 0.20 }, // (수정) 0.1 -> 0.2
                 { id: 'core_hp_1', title: '영혼 핵 강화 I', desc: '영혼 핵의 최대 HP가 20% 증가합니다.', apply: () => {soulCore.maxHp *= 1.2; soulCore.heal(soulCore.maxHp * 0.2);} },
                 { id: 'elite_chance_1', title: '불안정한 영혼', desc: '엘리트 몬스터 등장 확률이 5% 증가합니다.', apply: () => eliteSpawnChance += 0.05 },
                 { id: 'bone_damage_1', title: '날카로운 뼈 I', desc: '스켈레톤의 뼈 데미지가 1 증가합니다.', apply: () => player.stats.boneDamage += 1 },
                 { id: 'sonic_damage_1', title: '초음파 강화 I', desc: '박쥐의 초음파 데미지가 1 증가합니다.', apply: () => player.stats.sonicDamage += 1 },
-                { id: 'aura_size_1', title: '부패 오라 확장 I', desc: '좀비의 오라 범위가 15% 증가합니다.', apply: () => player.stats.auraSizeMult += 0.15 },
+                { id: 'aura_size_1', title: '부패 오라 확장 I', desc: '좀비의 오라 범위가 30% 증가합니다.', apply: () => player.stats.auraSizeMult += 0.30 }, // (수정) 0.15 -> 0.30
                 { id: 'imp_damage_1', title: '지옥불 I', desc: '임프의 파이어볼 데미지가 2 증가합니다.', apply: () => player.stats.fireballDamage += 2 },
                 { id: 'slime_slow_1', title: '강력 접착액', desc: '슬라임볼에 맞은 적이 1초간 느려집니다.', apply: () => player.stats.slimeSlow = true },
+                // (새로 추가) Plan 2
+                { id: 'pierce_1', title: '영혼 관통', desc: '모든 투사체가 적 1명을 관통합니다.', apply: () => player.stats.pierce += 1 },
+                { id: 'multi_shot_1', title: '분열된 영혼', desc: '투사체 +1 (스켈레톤, 박쥐, 임프)', apply: () => player.stats.multiShot += 1 },
+                { id: 'cooldown_1', title: '가속화', desc: '모든 숙주 스킬 쿨다운이 15% 감소합니다.', apply: () => player.stats.cooldownMult += 0.15 },
             ];
             let currentUpgradeChoices = [];
 
@@ -556,20 +556,23 @@
                     this.unpossessTimer = 0;
                     this.level = 1;
                     this.experience = 0;
-                    this.expToNextLevel = 50;
+                    this.expToNextLevel = 100;
                     
-                    this.dashTarget = null; // (새로 추가)
+                    this.dashTarget = null; 
                     
                     this.stats = {
                         maxGaugeMult: 1.0,
                         wispSpeedMult: 1.0,
                         attackSpeedMult: 1.0,
+                        cooldownMult: 0.0, // (새로 추가)
                         jumpNova: false,
                         auraSizeMult: 1.0,
                         boneDamage: 1,
                         sonicDamage: 1,
                         fireballDamage: 2,
                         slimeSlow: false,
+                        pierce: 0, // (새로 추가)
+                        multiShot: 0, // (새로 추가)
                     };
                 }
 
@@ -581,7 +584,7 @@
                         if(this.unpossessTimer > 0 && frameCount % 10 < 5) {
                              ctx.globalAlpha = 0.5; 
                         }
-                        if (this.state === 'DASHING') { // 돌진 이펙트
+                        if (this.state === 'DASHING') { 
                             ctx.globalAlpha = 0.5;
                             particles.push(new Particle(this.x, this.y, 0, 0, 10, PLAYER_COLOR, 'trail'));
                         }
@@ -606,7 +609,7 @@
 
                     // (수정) 돌진(DASHING) 상태
                     if (this.state === 'DASHING') {
-                        if (!this.dashTarget || this.dashTarget.hp <= 0) { // 타겟이 죽거나 사라짐
+                        if (!this.dashTarget || this.dashTarget.hp <= 0) { 
                             this.state = 'WISP';
                             this.dashTarget = null;
                             return;
@@ -624,7 +627,7 @@
                             this.x += (dx / dist) * PLAYER_DASH_SPEED;
                             this.y += (dy / dist) * PLAYER_DASH_SPEED;
                         }
-                        return; // 돌진 중에는 다른 로직 수행 안 함
+                        return; 
                     }
 
                     // 이동 (WISP 또는 HOST)
@@ -654,22 +657,32 @@
                 attack() {
                     if (!this.hostType) return;
                     const props = MOB_PROPERTIES[this.hostType];
-                    const attackCooldown = props.attackCooldown / (1.0 + this.stats.attackSpeedMult);
+                    // (수정) 쿨다운 계산에 2개 스탯 적용
+                    const attackCooldown = props.attackCooldown / (1.0 + this.stats.attackSpeedMult + this.stats.cooldownMult);
                     this.attackTimer = Math.max(10, attackCooldown); 
                     
                     const target = findNearestEnemy(this.x, this.y);
                     
+                    // (수정) 멀티샷 로직
+                    const numProjectiles = 1 + this.stats.multiShot + (this.isEliteHost && (this.hostType === 'skeleton' || this.hostType === 'bat' || this.hostType === 'imp') ? 2 : 0);
+                    const angleStep = 0.2; // 샷 간의 각도
+                    const startAngle = (target ? Math.atan2(target.y - this.y, target.x - this.x) : 0) - (angleStep * (numProjectiles - 1)) / 2;
+
                     switch (this.hostType) {
                         case 'skeleton':
+                        case 'bat':
+                        case 'imp':
+                        case 'slime':
                             if (target) {
-                                const damage = this.stats.boneDamage;
-                                if (this.isEliteHost) {
-                                    const angle = Math.atan2(target.y - this.y, target.x - this.x);
-                                    projectiles.push(new Projectile(this.x, this.y, null, 'bone', damage, { dx: Math.cos(angle), dy: Math.sin(angle) }));
-                                    projectiles.push(new Projectile(this.x, this.y, null, 'bone', damage, { dx: Math.cos(angle - 0.3), dy: Math.sin(angle - 0.3) }));
-                                    projectiles.push(new Projectile(this.x, this.y, null, 'bone', damage, { dx: Math.cos(angle + 0.3), dy: Math.sin(angle + 0.3) }));
-                                } else {
-                                    projectiles.push(new Projectile(this.x, this.y, target, 'bone', damage));
+                                let type, damage;
+                                if(this.hostType === 'skeleton') { type = 'bone'; damage = this.stats.boneDamage; }
+                                else if(this.hostType === 'bat') { type = 'sonic'; damage = this.stats.sonicDamage; }
+                                else if(this.hostType === 'imp') { type = 'fireball'; damage = this.stats.fireballDamage; }
+                                else if(this.hostType === 'slime') { type = 'slimeball'; damage = 1; }
+
+                                for(let i=0; i<numProjectiles; i++) {
+                                    const currentAngle = startAngle + i * angleStep;
+                                    projectiles.push(new Projectile(this.x, this.y, null, type, damage, { dx: Math.cos(currentAngle), dy: Math.sin(currentAngle) }, this.stats.slimeSlow));
                                 }
                             }
                             break;
@@ -682,37 +695,14 @@
                                 }
                             });
                             break;
-                        case 'bat': 
-                            if (target) {
-                                const damage = this.stats.sonicDamage;
-                                if (this.isEliteHost) {
-                                    const angle = Math.atan2(target.y - this.y, target.x - this.x);
-                                    projectiles.push(new Projectile(this.x, this.y, null, 'sonic', damage, { dx: Math.cos(angle), dy: Math.sin(angle) }));
-                                    projectiles.push(new Projectile(this.x, this.y, null, 'sonic', damage, { dx: Math.cos(angle - 0.3), dy: Math.sin(angle - 0.3) }));
-                                    projectiles.push(new Projectile(this.x, this.y, null, 'sonic', damage, { dx: Math.cos(angle + 0.3), dy: Math.sin(angle + 0.3) }));
-                                } else {
-                                    projectiles.push(new Projectile(this.x, this.y, target, 'sonic', damage));
-                                }
-                            }
-                            break;
                         case 'gargoyle': 
-                            const stompRadius = 70;
+                            const stompRadius = 105; // (수정) 70 -> 105 (1.5배)
                             particles.push(new Particle(this.x, this.y, 0, 0, 15, '#888888', 'shockwave', stompRadius));
                             enemies.forEach(enemy => {
                                 if (Math.hypot(this.x - enemy.x, this.y - enemy.y) < stompRadius) {
                                     enemy.takeDamage(2); 
                                 }
                             });
-                            break;
-                        case 'slime': 
-                            if(target) {
-                                projectiles.push(new Projectile(this.x, this.y, target, 'slimeball', 1, null, this.stats.slimeSlow));
-                            }
-                            break;
-                        case 'imp': 
-                             if(target) {
-                                projectiles.push(new Projectile(this.x, this.y, target, 'fireball', this.stats.fireballDamage));
-                            }
                             break;
                     }
                 }
@@ -800,6 +790,7 @@
                         upgradeCards[i].querySelector('p').textContent = currentUpgradeChoices[i].desc;
                     }
                     levelUpOverlay.classList.add('visible');
+                    infoButton.style.display = 'none'; // 레벨업 시 정보 버튼 숨기기
                     
                     if (this.experience >= this.expToNextLevel) {
                         this.experience = this.expToNextLevel - 1; 
@@ -814,20 +805,8 @@
                     this.type = type;
                     this.isElite = isElite; 
                     this.props = MOB_PROPERTIES[type];
-                    
-                    // --- (새로운 HP 계산 로직) ---
-                    // 1. 시간에 따른 기본 배율 (예: 2분(120초)마다 50%씩 증가)
-                    const timeMultiplier = 1 + (gameTime / 120) * 0.5;
-                    
-                    // 2. 기본 HP (엘리트는 2배)
-                    let baseHp = this.props.hp * (isElite ? 2 : 1);
-                    
-                    // 3. (중요) 엘리트 몬스터의 초반 체력 보너스
-                    const eliteFlatHpBoost = isElite ? 10 : 0; // 엘리트는 기본 HP +10
-                    
-                    this.hp = Math.ceil((baseHp + eliteFlatHpBoost) * timeMultiplier);
-                    // --- (여기까지) ---
-                    
+                    this.hp = this.props.hp * (isElite ? 2 : 1) + (isElite ? 10 : 0); // (수정) 엘리트 HP 보너스
+                    this.hp = Math.ceil(this.hp * (1 + (gameTime / 120) * 0.5)); // (수정) 시간 비례 HP
                     this.radius = 8 * PIXEL_SCALE * (isElite ? 1.5 : 1); 
                     this.color = this.props.color;
                     this.sprite = this.props.sprite;
@@ -873,7 +852,7 @@
                         this.die();
                     }
                 }
-                die(giveExp = true) { // (수정)
+                die(giveExp = true) { 
                     if (giveExp) {
                         const exp = this.props.exp * (this.isElite ? 3 : 1); 
                         echoes.push(new Echo(this.x, this.y, exp));
@@ -895,6 +874,7 @@
                     this.radius = 2 * PIXEL_SCALE;
                     this.speed = 5;
                     this.life = 60; 
+                    this.pierceCount = player.stats.pierce; // (새로 추가)
                     
                     if (type === 'sonic') this.speed = 8;
                     if (type === 'slimeball') this.speed = 3;
@@ -910,6 +890,7 @@
                         this.radius = 50;
                         this.life = 10; 
                         this.dx = 0; this.dy = 0;
+                        this.hitEnemies = []; // (새로 추가)
                     } else if (target) {
                         const dx = target.x - this.x;
                         const dy = target.y - this.y;
@@ -1032,7 +1013,7 @@
                     } else if (this.type === 'trail') {
                          ctx.fillStyle = this.color;
                         ctx.beginPath();
-                        ctx.arc(this.x, this.y, this.life / 5, 0, Math.PI*2); // 점점 작아짐
+                        ctx.arc(this.x, this.y, this.life / 5, 0, Math.PI*2); 
                         ctx.fill();
                     }
                     ctx.globalAlpha = 1.0;
@@ -1241,7 +1222,7 @@
                 }
                 
                 // 20초마다 난이도 상승
-                if (frameCount % 1800 === 0 && frameCount > 0) { 
+                if (frameCount % 1200 === 0 && frameCount > 0) { 
                     spawnInterval = Math.max(30, spawnInterval * 0.9); 
                     waveCount = Math.min(10, waveCount + 1); 
                 }
@@ -1265,7 +1246,7 @@
                     if (Math.hypot(e.x - soulCore.x, e.y - soulCore.y) < e.radius + soulCore.radius) {
                         soulCore.hp -= e.props.hp; 
                         updateCoreHpBar();
-                        e.die(false); // (수정) 핵에 닿아 죽으면 경험치 안 줌
+                        e.die(false); 
                         
                         if (soulCore.hp <= 0) {
                             endGame();
@@ -1274,21 +1255,38 @@
                     }
                 }
                 
-                // 4. 투사체 + 적
+                // 4. 투사체 + 적 (수정됨)
                 for (let i = projectiles.length - 1; i >= 0; i--) {
                     const p = projectiles[i];
-                    let projectileHit = false;
                     
+                    if (p.type === 'explosion') {
+                        if (!p.hitEnemies) p.hitEnemies = []; // 폭발은 1회만 히트
+                        for (const e of enemies) {
+                            if (!p.hitEnemies.includes(e) && Math.hypot(p.x - e.x, p.y - e.y) < p.radius) {
+                                e.takeDamage(p.damage);
+                                p.hitEnemies.push(e); 
+                            }
+                        }
+                        continue; 
+                    }
+
                     for (let j = enemies.length - 1; j >= 0; j--) {
                         const e = enemies[j];
                         if (Math.hypot(p.x - e.x, p.y - e.y) < e.radius) {
                             e.takeDamage(p.damage);
-                            projectileHit = true;
+                            if (p.slow) e.slowTimer = 60; // 1초 슬로우
+                            
+                            // (새로 추가) 임프 파이어볼 적중 시 폭발
+                            if (p.type === 'fireball') {
+                                projectiles.push(new Projectile(p.x, p.y, null, 'explosion', Math.floor(p.damage / 2)));
+                            }
+                            
+                            p.pierceCount--; // 관통
+                            if (p.pierceCount < 0) {
+                                projectiles.splice(i, 1);
+                                break; // 이 투사체는 소멸
+                            }
                         }
-                    }
-                    
-                    if (projectileHit && p.type !== 'explosion') {
-                        projectiles.splice(i, 1);
                     }
                 }
                 
