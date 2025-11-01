@@ -106,14 +106,16 @@
             height: 100%;
             background-color: rgba(10, 10, 20, 0.95);
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 20px;
-            box-sizing: border-box;
+            text-align: center;
             transition: opacity 0.3s ease, visibility 0.3s;
             visibility: hidden;
             opacity: 0;
             z-index: 10;
+            padding: 20px; /* ◀◀◀ 추가 */
+            box-sizing: border-box; /* ◀◀◀ 추가 (매우 중요) */
         }
 
         .overlay.visible {
@@ -204,6 +206,7 @@
             padding-right: 20px; /* 스크롤바 공간 */
             border-top: 1px solid #50507a;
             border-bottom: 1px solid #50507a;
+            box-sizing: border-box; /* ◀◀◀ 이 한 줄을 추가해주세요 */
         }
         
         #instructions h3 {
@@ -254,6 +257,8 @@
             padding: 15px;
             cursor: pointer;
             transition: background-color 0.2s;
+            text-align: center; /* ◀◀◀ 추가 (카드 내부 텍스트 정렬) */
+            box-sizing: border-box; /* ◀◀◀ 추가 (패딩이 너비를 밀어내지 않도록) */
         }
         
         .upgrade-card:hover {
@@ -877,6 +882,7 @@
                 overlayMessage.style.display = 'block';
                 gameOverlay.dataset.mode = 'start';
                 gameOverlay.classList.add('visible');
+                infoButton.style.display = 'block';
             }
             
             function showInfo() {
@@ -907,6 +913,7 @@
 
                 gameState = 'PLAYING';
                 gameOverlay.classList.remove('visible');
+                infoButton.style.display = 'none';
                 
                 // 1초마다 시간 갱신 타이머
                 clearInterval(gameTimerInterval);
