@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>👻 에코 점퍼 (v4.0 - 몹 복원)</title>
+    <title>👻 에코 점퍼 (v4.0)</title>
     <style>
         /* --- 기본 및 레이아웃 --- */
         html, body {
@@ -35,7 +35,6 @@
         #game-canvas {
             display: block;
             cursor: none;
-            /* 픽셀이 흐릿해지는 것 방지 */
             image-rendering: -moz-crisp-edges;
             image-rendering: -webkit-crisp-edges;
             image-rendering: pixelated;
@@ -107,10 +106,10 @@
             height: 100%;
             background-color: rgba(10, 10, 20, 0.95);
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
             transition: opacity 0.3s ease, visibility 0.3s;
             visibility: hidden;
             opacity: 0;
@@ -121,16 +120,32 @@
             visibility: visible;
             opacity: 1;
         }
+        
+        /* 오버레이 내부 콘텐츠 래퍼 */
+        #overlay-content-wrapper {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            width: 100%;
+            height: 100%;
+            max-height: 90%; /* 콘텐츠가 너무 길어지는 것 방지 */
+            overflow: hidden; /* 내부 스크롤은 #instructions가 담당 */
+        }
+
 
         /* --- 시작/종료 오버레이 --- */
         #game-overlay h1 {
             color: #00FFFF; /* 네온 시안 */
             margin-bottom: 10px;
+            flex-shrink: 0;
         }
 
         #game-overlay p {
             font-size: 1.1em;
-            margin: 10px 20px;
+            margin: 10px 0;
+            flex-shrink: 0;
         }
 
         #start-button {
@@ -144,6 +159,7 @@
             cursor: pointer;
             box-shadow: 0 0 20px #00FFFF;
             margin-top: 20px;
+            flex-shrink: 0;
         }
 
         #final-score {
@@ -151,9 +167,74 @@
             font-weight: bold;
             color: #FF00FF; /* 네온 마젠타 */
             margin: 10px 0;
+            flex-shrink: 0;
         }
         
-        /* --- 레벨 업 오버레이 (새로 추가) --- */
+        #best-time-display {
+            font-size: 1.1em;
+            color: #FFFF00;
+            margin: 0;
+        }
+        
+        /* 정보 버튼 (복구) */
+        #info-button {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid #fff;
+            color: white;
+            font-size: 1.5em;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 11;
+        }
+        
+        /* 상세 '게임 방법' UI (복구) */
+        #instructions {
+            display: none; /* 평소엔 숨김 */
+            flex-grow: 1; /* 남는 공간을 모두 차지 */
+            width: 100%;
+            max-width: 400px; /* 가독성 위한 최대 너비 */
+            overflow-y: auto; /* *** 여기가 스크롤을 담당 *** */
+            text-align: left;
+            padding: 10px;
+            padding-right: 20px; /* 스크롤바 공간 */
+            border-top: 1px solid #50507a;
+            border-bottom: 1px solid #50507a;
+        }
+        
+        #instructions h3 {
+            color: #00FFFF;
+            border-bottom: 1px solid #00FFFF;
+            padding-bottom: 5px;
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+        
+        #instructions ul {
+            padding-left: 20px;
+            margin: 0 0 15px 0;
+        }
+        
+        #instructions li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        #instructions b {
+            color: #FFFF00; /* 노란색 강조 */
+        }
+        
+        #instructions code {
+            background-color: #000;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+        
+        /* --- 레벨 업 오버레이 --- */
         #level-up-overlay {
             justify-content: center;
             gap: 20px;
@@ -197,9 +278,8 @@
 
     <div id="game-container">
         
-        <div id="top-ui">
-            <div id="score">Score: 0</div>
-            <div id="level">Lv. 1</div>
+        <button id="info-button">?</button> <div id="top-ui">
+            <div id="time-display">Time: 0</div> <div id="level">Lv. 1</div>
         </div>
         
         <div id="exp-bar"></div> <canvas id="game-canvas"></canvas>
@@ -213,10 +293,49 @@
         <div id="game-overlay" class="overlay visible">
             <div id="overlay-content-wrapper">
                 <h1>👻 에코 점퍼 👻</h1>
-                <p id="overlay-message">
+                <p id="best-time-display">Best Time: 0</p> <p id="overlay-message">
                     적의 몸을 빼앗아 싸우세요!<br>
                     숙주가 파괴되기 전에 다음 적으로 '점프'하세요.
                 </p>
+                
+                <div id="instructions">
+                    <h3>🕹️ 조작 방법 (Controls)</h3>
+                    <h4>🖥️ PC (키보드 + 마우스)</h4>
+                    <ul>
+                        <li><b>이동:</b> 마우스 커서를 움직여 해당 방향으로 이동합니다.</li>
+                        <li><b>대시/빙의:</b> <code>마우스 왼쪽 클릭</code>을 하여 가장 가까운 적에게 대시/빙의합니다.</li>
+                    </ul>
+                    <h4>📱 모바일 (터치스크린)</h4>
+                    <ul>
+                        <li><b>이동:</b> 화면 아무 곳이나 <code>손가락으로 드래그</code>하여 해당 방향으로 이동합니다.</li>
+                        <li><b>대시/빙의:</b> 화면 아무 곳이나 <code>짧게 탭(Tap)</code>하여 가장 가까운 적에게 대시/빙의합니다.</li>
+                    </ul>
+                    
+                    <h3>1. 기본 플레이 방법</h3>
+                    <ul>
+                        <li>플레이어는 공격 능력이 없는 <b>'유령 (🔵)'</b> 상태로 시작합니다. 유령 상태에서 적과 닿으면 <b>즉시 게임 오버</b>입니다.</li>
+                        <li>'대시'로 몬스터(예: <code>◻️</code>)에게 닿으면 <b>'빙의'</b>합니다.</li>
+                        <li>빙의에 성공하면, 플레이어는 <b>'푸른색 숙주 (◻️🔵)'</b>가 되어 몬스터를 조종하며, 해당 몬스터의 고유 능력이 <b>자동으로 발동</b>됩니다.</li>
+                        <li>하단의 <b>'빙의 게이지'</b>는 <b>지속적으로 감소</b>합니다. 게이지가 0이 되면 숙주가 파괴되고 당신은 잠시 무적 상태의 '유령'이 됩니다.</li>
+                        <li><b>(중요) 숙주 피격:</b> 숙주 상태에서 적과 닿으면, 게이지가 추가로 <b>더 빨리 닳습니다!</b></li>
+                    </ul>
+                    
+                    <h3>2. 몬스터(숙주) 특징</h3>
+                    <ul>
+                        <li><b>◻️ 스켈레톤 (HP: 2):</b> [밸런스형] 가까운 적에게 뼈다귀를 던집니다.</li>
+                        <li><b>🟩 좀비 (HP: 5):</b> [광역/방어형] 주변에 '부패 오라'를 방출합니다. 게이지가 매우 깁니다.</li>
+                        <li><b>🟪 박쥐 (HP: 1):</b> [기동/관통형] 가까운 적에게 빠른 '초음파'를 쏩니다. 이동 속도가 빠릅니다.</li>
+                        <li><b>🩶 가고일 (HP: 10):</b> [방어형] <b>공격 능력이 없습니다.</b> 대신 빙의 게이지가 압도적으로 길어 '안전지대' 역할을 합니다.</li>
+                    </ul>
+                    
+                    <h3>3. 기록</h3>
+                    <ul>
+                        <li>적을 처치하면 '에코(💎)'를 모아 레벨 업 합니다.</li>
+                        <li>점수는 없고, 오직 <b>'버틴 시간'</b>으로만 기록이 측정됩니다.</li>
+                        <li>최고 기록은 브라우저에 자동으로 저장됩니다.</li>
+                    </ul>
+                </div>
+                
                 <p id="final-score"></p>
                 <button id="start-button">시작하기</button>
             </div>
@@ -247,11 +366,17 @@
             const gameContainer = document.getElementById('game-container');
             const canvas = document.getElementById('game-canvas');
             const ctx = canvas.getContext('2d');
+            
             const gameOverlay = document.getElementById('game-overlay');
+            const overlayContent = document.getElementById('overlay-content-wrapper');
             const startButton = document.getElementById('start-button');
             const finalScoreDisplay = document.getElementById('final-score');
+            const bestTimeDisplay = document.getElementById('best-time-display');
+            const infoButton = document.getElementById('info-button');
+            const instructions = document.getElementById('instructions');
+            const overlayMessage = document.getElementById('overlay-message');
             
-            const scoreDisplay = document.getElementById('score');
+            const timeDisplay = document.getElementById('time-display');
             const levelDisplay = document.getElementById('level');
             const expBar = document.getElementById('exp-bar');
             const gaugeContainer = document.getElementById('gauge-container');
@@ -263,22 +388,25 @@
             // --- 캔버스 크기 ---
             const VIEWPORT_WIDTH = gameContainer.clientWidth;
             const VIEWPORT_HEIGHT = gameContainer.clientHeight;
-            const PIXEL_SCALE = 2; // 픽셀 아트용 스케일
+            const PIXEL_SCALE = 4; 
             canvas.width = VIEWPORT_WIDTH;
             canvas.height = VIEWPORT_HEIGHT;
             ctx.imageSmoothingEnabled = false;
 
             // --- 게임 상태 및 설정 ---
             let gameState = 'START'; // 'START', 'PLAYING', 'PAUSED', 'OVER'
-            let score = 0;
+            let gameTime = 0; // (Score -> Time)
             let gameLoopId = null;
             let frameCount = 0;
+            let gameTimerInterval = null; // (새로 추가)
             
             let spawnInterval = 180; // 3초
             let nextSpawnFrame = spawnInterval;
             let waveCount = 1;
 
             let player, enemies, projectiles, echoes;
+
+            const BEST_TIME_KEY = 'echoJumperBestTime';
 
             // --- 마우스/터치 위치 ---
             let targetPos = { x: VIEWPORT_WIDTH / 2, y: VIEWPORT_HEIGHT / 2 };
@@ -294,13 +422,13 @@
                 'zombie': { gauge: 1800, attackType: 'aura', attackCooldown: 10, speed: 0.8, hp: 5, exp: 20,
                     sprite: ['0110','1111','0110','1111','1001'], color: '#32CD32' },
                 'bat': { gauge: 600, attackType: 'sonic', attackCooldown: 40, speed: 2.5, hp: 1, exp: 10, 
-                    sprite: ['10101','01110','00100'], color: '#9400D3' }, // 5x3 픽셀
+                    sprite: ['10101','01110','00100'], color: '#9400D3' }, 
                 'gargoyle': { gauge: 4000, attackType: 'none', attackCooldown: 999, speed: 0.5, hp: 10, exp: 30,
-                    sprite: ['01110','11111','11011','01110','01010'], color: '#888888' } // 5x5 픽셀
+                    sprite: ['01110','11111','11011','01110','01010'], color: '#888888' }
             };
             const MOB_TYPES = Object.keys(MOB_PROPERTIES);
             
-            // 업그레이드 풀 (수정됨)
+            // 업그레이드 풀
             const UPGRADE_POOL = [
                 { id: 'gauge_1', title: '숙주 안정화 I', desc: '빙의 게이지 총량이 15% 증가합니다.', apply: () => player.stats.maxGaugeMult += 0.15 },
                 { id: 'wisp_speed_1', title: '유령 기동력 I', desc: '유령 상태의 이동 속도가 10% 증가합니다.', apply: () => player.stats.wispSpeedMult += 0.1 },
@@ -309,7 +437,6 @@
                 { id: 'aura_size_1', title: '부패 오라 확장 I', desc: '좀비의 오라 범위가 15% 증가합니다.', apply: () => player.stats.auraSizeMult += 0.15 },
                 { id: 'bone_damage_1', title: '날카로운 뼈 I', desc: '스켈레톤의 뼈 데미지가 1 증가합니다.', apply: () => player.stats.boneDamage += 1 },
                 { id: 'sonic_damage_1', title: '초음파 강화 I', desc: '박쥐의 초음파 데미지가 1 증가합니다.', apply: () => player.stats.sonicDamage += 1 },
-                { id: 'gargoyle_gauge_1', title: '석화 피부 강화 I', desc: '가고일의 빙의 게이지가 20% 증가합니다.', apply: () => player.stats.maxGaugeMult += 0.2 },
             ];
             let currentUpgradeChoices = [];
 
@@ -317,12 +444,9 @@
             function drawPixelSprite(spriteData, x, y, colorTint) {
                 const spriteHeight = spriteData.length;
                 const spriteWidth = spriteData[0].length;
-                
                 const startX = Math.floor(x - (spriteWidth * PIXEL_SCALE) / 2);
                 const startY = Math.floor(y - (spriteHeight * PIXEL_SCALE) / 2);
-
                 ctx.fillStyle = colorTint;
-                
                 for (let r = 0; r < spriteHeight; r++) {
                     for (let c = 0; c < spriteWidth; c++) {
                         if (spriteData[r][c] === '1') {
@@ -333,7 +457,6 @@
             }
             
             // --- 클래스 정의 ---
-
             class Player {
                 constructor() { this.reset(); }
                 reset() {
@@ -348,12 +471,10 @@
                     this.attackTimer = 0;
                     this.dashCooldown = 0;
                     this.unpossessTimer = 0;
-                    
                     this.level = 1;
                     this.experience = 0;
                     this.expToNextLevel = 100;
                     
-                    // 업그레이드 스탯
                     this.stats = {
                         maxGaugeMult: 1.0,
                         wispSpeedMult: 1.0,
@@ -361,7 +482,7 @@
                         jumpNova: false,
                         auraSizeMult: 1.0,
                         boneDamage: 1,
-                        sonicDamage: 1, // (새로 추가)
+                        sonicDamage: 1,
                     };
                 }
 
@@ -371,7 +492,7 @@
                         ctx.fillStyle = PLAYER_COLOR;
                         ctx.shadowColor = PLAYER_COLOR;
                         if(this.unpossessTimer > 0 && frameCount % 10 < 5) {
-                             ctx.globalAlpha = 0.5; // 무적 깜빡임
+                             ctx.globalAlpha = 0.5; 
                         }
                         ctx.beginPath();
                         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
@@ -429,11 +550,11 @@
                             const auraRadius = 60 * this.stats.auraSizeMult;
                             enemies.forEach(enemy => {
                                 if (Math.hypot(this.x - enemy.x, this.y - enemy.y) < auraRadius) {
-                                    enemy.takeDamage(1); // 오라 데미지는 1 고정
+                                    enemy.takeDamage(1); 
                                 }
                             });
                             break;
-                        case 'bat': // (새로 추가)
+                        case 'bat': 
                             if (target) {
                                 projectiles.push(new Projectile(this.x, this.y, target, 'sonic', this.stats.sonicDamage));
                             }
@@ -445,7 +566,7 @@
                     if (this.dashCooldown > 0 || this.state === 'HOST') return; 
                     this.dashCooldown = 30; 
                     
-                    let closestEnemy = findNearestEnemy(this.x, this.y, 150); // 150px 범위 내
+                    let closestEnemy = findNearestEnemy(this.x, this.y, 150); 
                     
                     if (closestEnemy) {
                         this.possess(closestEnemy);
@@ -454,7 +575,6 @@
 
                 possess(enemy) {
                     if (this.stats.jumpNova) {
-                        // 점프 노바 (주변 적 데미지)
                         projectiles.push(new Projectile(this.x, this.y, null, 'explosion', 5));
                     }
                     
@@ -481,8 +601,14 @@
                     gaugeContainer.style.display = 'none';
                 }
                 
+                takeGaugeDamage(amount) {
+                    if (this.state !== 'HOST') return;
+                    this.gauge -= amount;
+                    // (TODO: 피격 시각 효과)
+                }
+                
                 collectExp(value) {
-                    if (gameState !== 'PLAYING') return; // 레벨업 중 경험치 획득 방지
+                    if (gameState !== 'PLAYING') return; 
                     this.experience += value;
                     if (this.experience >= this.expToNextLevel) {
                         this.levelUp();
@@ -493,7 +619,7 @@
                 levelUp() {
                     gameState = 'PAUSED'; 
                     this.level++;
-                    this.experience -= this.expToNextLevel; // 남은 경험치 이월
+                    this.experience -= this.expToNextLevel; 
                     this.expToNextLevel = Math.floor(this.expToNextLevel * 1.5);
                     
                     levelDisplay.textContent = `Lv. ${this.level}`;
@@ -506,9 +632,7 @@
                     }
                     levelUpOverlay.classList.add('visible');
                     
-                    // 레벨이 더 오를 수 있으면
                     if (this.experience >= this.expToNextLevel) {
-                        // (간단화) 여기서는 1레벨업만 처리
                         this.experience = this.expToNextLevel - 1; 
                     }
                 }
@@ -548,8 +672,6 @@
                     }
                 }
                 die() {
-                    score += this.props.exp; 
-                    scoreDisplay.textContent = `Score: ${score}`;
                     echoes.push(new Echo(this.x, this.y, this.props.exp));
                     enemies = enemies.filter(e => e !== this);
                 }
@@ -574,19 +696,21 @@
                         const dist = Math.hypot(dx, dy);
                         this.dx = (dx / dist) * this.speed;
                         this.dy = (dy / dist) * this.speed;
-                    } else { // 타겟이 없으면 (예: 점프 노바)
+                    } else { 
                         this.dx = 0; this.dy = 0; 
                     }
                 }
                 draw() {
-                    ctx.fillStyle = '#FFFFFF';
-                    ctx.shadowColor = '#FFFFFF';
                     ctx.shadowBlur = 5;
                     switch(this.type) {
                         case 'bone':
+                            ctx.fillStyle = '#FFFFFF';
+                            ctx.shadowColor = '#FFFFFF';
                             ctx.fillRect(this.x - 2, this.y - 4, 4, 8); // 2x4 픽셀
                             break;
                         case 'sonic':
+                            ctx.fillStyle = '#9400D3';
+                            ctx.shadowColor = '#9400D3';
                             ctx.fillRect(this.x - 4, this.y - 1, 8, 2); // 4x1 픽셀
                             break;
                         case 'explosion':
@@ -627,7 +751,6 @@
                     ctx.shadowBlur = 0;
                 }
                 update() {
-                    // 플레이어 근처로 끌어당겨짐
                     const dist = Math.hypot(player.x - this.x, player.y - this.y);
                     if (dist < this.pickupRadius) {
                         const dx = player.x - this.x;
@@ -640,7 +763,18 @@
 
             // --- 이벤트 리스너 ---
             
-            startButton.addEventListener('click', startGame);
+            startButton.addEventListener('click', handleStartButton);
+            
+            // 정보 버튼 (수정됨)
+            infoButton.addEventListener('click', () => {
+                if (gameState === 'PLAYING' || gameState === 'PAUSED') return;
+                
+                if (gameOverlay.dataset.mode === 'info') {
+                    setupStartScreen(); // 정보 -> 시작
+                } else {
+                    showInfo(); // 시작 -> 정보
+                }
+            });
             
             // 이동
             canvas.addEventListener('mousemove', e => {
@@ -695,30 +829,73 @@
                 const shuffled = [...UPGRADE_POOL].sort(() => 0.5 - Math.random());
                 return shuffled.slice(0, num);
             }
+            
+            function getBestTime() {
+                return parseInt(localStorage.getItem(BEST_TIME_KEY) || '0');
+            }
+            
+            function saveBestTime(time) {
+                const currentBest = getBestTime();
+                if (time > currentBest) {
+                    localStorage.setItem(BEST_TIME_KEY, time);
+                    return true;
+                }
+                return false;
+            }
 
             // --- 핵심 함수 ---
 
+            function handleStartButton() {
+                if (gameOverlay.dataset.mode === 'info') {
+                    setupStartScreen();
+                } else {
+                    startGame();
+                }
+            }
+            
             function setupStartScreen(isGameOver = false) {
                 gameState = 'START';
+                
+                // 최고 시간 표시 (수정)
+                bestTimeDisplay.textContent = `Best Time: ${getBestTime()}s`;
+                
                 if (isGameOver) {
-                    finalScoreDisplay.textContent = `최종 점수: ${score}`;
+                    finalScoreDisplay.textContent = `Time Survived: ${gameTime}s`;
+                    if (saveBestTime(gameTime)) {
+                        finalScoreDisplay.textContent += " (New Record!)";
+                        bestTimeDisplay.textContent = `Best Time: ${gameTime}s`;
+                    }
                     finalScoreDisplay.style.display = 'block';
                     startButton.textContent = '다시하기';
                 } else {
                     finalScoreDisplay.style.display = 'none';
                     startButton.textContent = '시작하기';
                 }
+                
+                // 정보창 숨기고 기본 메시지 표시
+                instructions.style.display = 'none';
+                overlayMessage.style.display = 'block';
+                gameOverlay.dataset.mode = 'start';
                 gameOverlay.classList.add('visible');
+            }
+            
+            function showInfo() {
+                gameOverlay.dataset.mode = 'info';
+                instructions.style.display = 'block'; 
+                overlayMessage.style.display = 'none'; 
+                finalScoreDisplay.style.display = 'none';
+                startButton.textContent = '돌아가기';
+                instructions.scrollTop = 0; // 스크롤 맨 위로
             }
 
             function startGame() {
-                score = 0;
+                gameTime = 0;
                 frameCount = 0;
                 waveCount = 1;
                 spawnInterval = 180; 
                 nextSpawnFrame = 0;
                 
-                scoreDisplay.textContent = `Score: 0`;
+                timeDisplay.textContent = `Time: 0`;
                 
                 player = new Player();
                 levelDisplay.textContent = `Lv. ${player.level}`;
@@ -731,11 +908,21 @@
                 gameState = 'PLAYING';
                 gameOverlay.classList.remove('visible');
                 
+                // 1초마다 시간 갱신 타이머
+                clearInterval(gameTimerInterval);
+                gameTimerInterval = setInterval(() => {
+                    if (gameState === 'PLAYING') {
+                        gameTime++;
+                        timeDisplay.textContent = `Time: ${gameTime}`;
+                    }
+                }, 1000);
+                
                 gameLoop(); // 루프 시작
             }
 
             function endGame() {
                 gameState = 'OVER';
+                clearInterval(gameTimerInterval); // 시간 타이머 정지
                 cancelAnimationFrame(gameLoopId);
                 setupStartScreen(true); 
             }
@@ -762,8 +949,8 @@
                     nextSpawnFrame = frameCount + spawnInterval;
                 }
                 
-                // 30초마다 난이도 상승
-                if (frameCount % 1800 === 0 && frameCount > 0) { 
+                // 20초마다 난이도 상승 (수정)
+                if (frameCount % 1200 === 0 && frameCount > 0) { 
                     spawnInterval = Math.max(30, spawnInterval * 0.9); 
                     waveCount = Math.min(10, waveCount + 1); 
                 }
@@ -780,7 +967,16 @@
                     }
                 }
                 
-                // 2. 투사체 + 적
+                // 2. 숙주 + 적 -> 게이지 대미지 (새로 추가)
+                if (player.state === 'HOST') {
+                    for (const enemy of enemies) {
+                        if (Math.hypot(player.x - enemy.x, player.y - enemy.y) < player.radius + enemy.radius) {
+                            player.takeGaugeDamage(50); // 50 프레임만큼의 게이지 즉시 감소
+                        }
+                    }
+                }
+                
+                // 3. 투사체 + 적
                 for (let i = projectiles.length - 1; i >= 0; i--) {
                     const p = projectiles[i];
                     let projectileHit = false;
@@ -798,7 +994,7 @@
                     }
                 }
                 
-                // 3. 플레이어 + 에코
+                // 4. 플레이어 + 에코
                 for (let i = echoes.length - 1; i >= 0; i--) {
                     const e = echoes[i];
                     if (Math.hypot(player.x - e.x, player.y - e.y) < player.radius + e.radius + 10) {
