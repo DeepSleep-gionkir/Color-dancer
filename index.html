@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>컬러 댄서</title>
+    <style>
+        /* --- 기본 및 레이아웃 --- */
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            background-color: #111; /* 어두운 배경 */
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            touch-action: none; /* 모바일 스크롤 방지 */
+        }
+
+        /* 캔버스 */
+        #game-canvas {
+            background-color: #000; /* 흑백 악보 배경 */
+            border: 2px solid #555;
+            cursor: none; /* 마우스 커서 숨김 */
+        }
+
+        /* --- 시작/종료 오버레이 --- */
+        #game-overlay {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            max-width: 500px;
+            max-height: 800px;
+            background-color: rgba(0, 0, 0, 0.85);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            transition: opacity 0.5s ease, visibility 0.5s;
+            visibility: visible;
+            opacity: 1;
+            z-index: 10;
+        }
+
+        #game-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        #game-overlay h1 {
+            color: #00FFFF; /* 네온 시안 */
+            margin-bottom: 10px;
+        }
+
+        #game-overlay p {
+            font-size: 1.1em;
+            margin: 10px 20px;
+        }
+
+        #start-button {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #000;
+            background-color: #00FFFF;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 0 20px #00FFFF;
+            margin-top: 20px;
+        }
+
+        #final-score {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #FF00FF; /* 네온 마젠타 */
+            margin: 10px 0;
+        }
+
+    </style>
+</head>
+<body>
+
+    <canvas id="game-canvas"></canvas>
+
+    <div id="game-overlay" data-mode="start">
+        <h1>💠 컬러 댄서 💠</h1>
+        <p>
+            왼쪽 '안전지대'에서 출발하여<br>
+            악보에 당신의 궤적을 그리세요.<br><br>
+            <b>'불협화음(💥)'</b>이 당신의 몸이나<br>
+            그리고 있는 <b>'색실'</b>에 닿기 전에<br>
+            안전지대로 돌아와 영역을 색칠하세요!
+        </p>
+        <p id="final-score"></p>
+        <button id="start-button">시작하기</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- DOM 요소 ---
+            const canvas = document.getElementById('game-canvas');
+            const ctx = canvas.getContext('2d');
+            const gameOverlay = document.getElementById('game-overlay');
+            const startButton = document.getElementById('start-button');
+            const finalScoreDisplay = document.getElementById('final-score');
+
+            // --- 캔버스 크기 설정 ---
+            const VIEWPORT_WIDTH = Math.min(window.innerWidth, 500);
+            const VIEWPORT_HEIGHT = Math.min(window.innerHeight, 800);
+            
+            canvas.width = VIEWPORT_WIDTH;
+            canvas.height = VIEWPORT_HEIGHT;
+
+            // --- 게임 상태 및 설정 ---
+            let gameState = 'start'; // 'start', 'playing', 'over'
+            let score = 0;
+            let lives = 3;
+            let gameLoopId = null;
+
+            const SAFE_ZONE_WIDTH = 20; // 왼쪽 안전지대 너비
+            const PLAYER_SIZE = 10;
+            const ENEMY_SIZE = 15;
+            const PLAYER_TRAIL_COLOR = "#00FFFF"; // 시안색
+            const CAPTURED_AREA_COLOR = "rgba(0, 255, 255, 0.2)"; // 옅은 시안색
+            const ENEMY_COLOR = "#FF00FF"; // 마젠타색
+
+            // --- 게임 객체 ---
+            let player = {
+                x: SAFE_ZONE_WIDTH / 2,
+                y: VIEWPORT_HEIGHT / 2,
+                isDrawing: false,
+                trail: [] // {x, y} 객체의 배열
+            };
+
+            let enemies = [];
+            let capturedAreas = []; // 채워진 영역 (폴리곤 배열)
+
+            // --- 마우스/터치 위치 ---
+            let mouse = {
+                x: player.x,
+                y: player.y
+            };
+
+            // --- 이벤트 리스너 ---
+            const clickEvent = ('ontouchstart' in window) ? 'touchstart' : 'mousedown';
+            startButton.addEventListener(clickEvent, startGame);
+            
+            // 마우스/터치 리스너
+            canvas.addEventListener('mousemove', e => {
+                const rect = canvas.getBoundingClientRect();
+                mouse.x = e.clientX - rect.left;
+                mouse.y = e.clientY - rect.top;
+            });
+            canvas.addEventListener('touchmove', e => {
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                mouse.x = e.touches[0].clientX - rect.left;
+                mouse.y = e.touches[0].clientY - rect.top;
+            }, { passive: false });
+
+
+            // --- 핵심 함수 ---
+
+            function startGame() {
+                // 게임 변수 초기화
+                score = 0;
+                lives = 3;
+                gameState = 'playing';
+                player.x = SAFE_ZONE_WIDTH / 2;
+                player.y = VIEWPORT_HEIGHT / 2;
+                player.isDrawing = false;
+                player.trail = [];
+                capturedAreas = [];
+                enemies = [];
+
+                // 적 생성
+                spawnEnemy();
+                spawnEnemy();
+
+                gameOverlay.classList.add('hidden');
+                
+                // 메인 루프 시작
+                gameLoop();
+            }
+
+            function endGame() {
+                gameState = 'over';
+                cancelAnimationFrame(gameLoopId);
+                
+                finalScoreDisplay.textContent = `최종 점수: ${score}`;
+                startButton.textContent = '다시하기';
+                gameOverlay.classList.remove('hidden');
+            }
+            
+            function spawnEnemy() {
+                enemies.push({
+                    x: Math.random() * (VIEWPORT_WIDTH - SAFE_ZONE_WIDTH - ENEMY_SIZE) + SAFE_ZONE_WIDTH,
+                    y: Math.random() * (VIEWPORT_HEIGHT - ENEMY_SIZE),
+                    dx: (Math.random() < 0.5 ? 1 : -1) * (1 + Math.random()),
+                    dy: (Math.random() < 0.5 ? 1 : -1) * (1 + Math.random()),
+                });
+            }
+
+            function gameLoop() {
+                if (gameState !== 'playing') return;
+
+                update();
+                draw();
+
+                gameLoopId = requestAnimationFrame(gameLoop);
+            }
+
+            // --- 업데이트 로직 ---
+            function update() {
+                updatePlayer();
+                updateEnemies();
+                checkCollisions();
+            }
+
+            function updatePlayer() {
+                // 플레이어를 마우스 위치로 부드럽게 이동
+                player.x += (mouse.x - player.x) * 0.2;
+                player.y += (mouse.y - player.y) * 0.2;
+
+                // 캔버스 밖으로 나가지 않도록
+                player.x = Math.max(PLAYER_SIZE / 2, Math.min(VIEWPORT_WIDTH - PLAYER_SIZE / 2, player.x));
+                player.y = Math.max(PLAYER_SIZE / 2, Math.min(VIEWPORT_HEIGHT - PLAYER_SIZE / 2, player.y));
+                
+                // 안전지대 상태 확인
+                const wasDrawing = player.isDrawing;
+                player.isDrawing = player.x > SAFE_ZONE_WIDTH + (PLAYER_SIZE / 2);
+
+                if (player.isDrawing) {
+                    // 그리고 있는 중: 트레일 추가
+                    player.trail.push({ x: player.x, y: player.y });
+                } else if (wasDrawing && !player.isDrawing) {
+                    // 방금 안전지대로 복귀: 영역 캡처
+                    captureArea();
+                }
+            }
+
+            function updateEnemies() {
+                enemies.forEach(enemy => {
+                    enemy.x += enemy.dx;
+                    enemy.y += enemy.dy;
+
+                    // 벽과 충돌 (안전지대는 무시)
+                    if (enemy.x < SAFE_ZONE_WIDTH || enemy.x > VIEWPORT_WIDTH - ENEMY_SIZE) {
+                        enemy.dx *= -1;
+                        enemy.x = Math.max(SAFE_ZONE_WIDTH, Math.min(VIEWPORT_WIDTH - ENEMY_SIZE, enemy.x));
+                    }
+                    if (enemy.y < 0 || enemy.y > VIEWPORT_HEIGHT - ENEMY_SIZE) {
+                        enemy.dy *= -1;
+                        enemy.y = Math.max(0, Math.min(VIEWPORT_HEIGHT - ENEMY_SIZE, enemy.y));
+                    }
+                });
+            }
+
+            function captureArea() {
+                if (player.trail.length < 2) {
+                    player.trail = [];
+                    return; // 캡처할 영역이 없음
+                }
+
+                // 폴리곤 생성: 트레일 + 안전지대 벽
+                const newPolygon = [...player.trail];
+                
+                // 트레일의 마지막 점에서 안전지대 벽까지
+                newPolygon.push({ x: SAFE_ZONE_WIDTH, y: player.y });
+                // 트레일의 시작점에서 안전지대 벽까지
+                newPolygon.push({ x: SAFE_ZONE_WIDTH, y: player.trail[0].y });
+
+                capturedAreas.push(newPolygon);
+                
+                // 점수 획득 (간단히 트레일 길이 비례)
+                score += player.trail.length * 10;
+
+                player.trail = [];
+                
+                // 난이도 상승: 적 추가
+                if (score > 10000 && enemies.length < 3) spawnEnemy();
+                if (score > 30000 && enemies.length < 4) spawnEnemy();
+            }
+            
+            function checkCollisions() {
+                if (!player.isDrawing) return; // 안전지대에서는 무적
+
+                enemies.forEach(enemy => {
+                    // 1. 적 vs 플레이어 충돌
+                    if (isRectCollision(enemy, {x: player.x - PLAYER_SIZE/2, y: player.y - PLAYER_SIZE/2, width: PLAYER_SIZE, height: PLAYER_SIZE})) {
+                        handleHit();
+                        return;
+                    }
+                    
+                    // 2. 적 vs 트레일 충돌 (간단하게)
+                    // (성능을 위해 10개마다 하나씩 체크)
+                    for(let i = 0; i < player.trail.length; i += 10) {
+                        const point = player.trail[i];
+                        // 적 사각형 안에 트레일 포인트가 들어갔는지
+                        if (point.x >= enemy.x && point.x <= enemy.x + ENEMY_SIZE &&
+                            point.y >= enemy.y && point.y <= enemy.y + ENEMY_SIZE) {
+                            handleHit();
+                            return;
+                        }
+                    }
+                });
+            }
+            
+            function handleHit() {
+                lives--;
+                player.isDrawing = false;
+                player.trail = []; // 트레일 리셋
+                player.x = SAFE_ZONE_WIDTH / 2; // 안전지대로 복귀
+                mouse.x = player.x; // 마우스 위치도 리셋
+                
+                // 간단한 화면 깜빡임 효과
+                canvas.style.backgroundColor = "#FF0000";
+                setTimeout(() => { canvas.style.backgroundColor = "#000"; }, 100);
+
+                if (lives <= 0) {
+                    endGame();
+                }
+            }
+            
+            function isRectCollision(rect1, rect2) {
+                // rect1 = enemy (x,y,width,height)
+                // rect2 = player (x,y,width,height)
+                const r1 = { ...rect1, width: ENEMY_SIZE, height: ENEMY_SIZE };
+                return (
+                    r1.x < rect2.x + rect2.width &&
+                    r1.x + r1.width > rect2.x &&
+                    r1.y < rect2.y + rect2.height &&
+                    r1.y + r1.height > rect2.y
+                );
+            }
+
+            // --- 그리기 로직 ---
+            function draw() {
+                // 1. 배경 클리어 (오선지 느낌)
+                ctx.fillStyle = "#000";
+                ctx.fillRect(0, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+                
+                ctx.strokeStyle = "#333";
+                ctx.lineWidth = 1;
+                for(let i=0.3; i < 0.8; i += 0.1) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, VIEWPORT_HEIGHT * i);
+                    ctx.lineTo(VIEWPORT_WIDTH, VIEWPORT_HEIGHT * i);
+                    ctx.stroke();
+                }
+
+                // 2. 안전지대
+                ctx.fillStyle = "#222";
+                ctx.fillRect(0, 0, SAFE_ZONE_WIDTH, VIEWPORT_HEIGHT);
+
+                // 3. 캡처된 영역
+                ctx.fillStyle = CAPTURED_AREA_COLOR;
+                capturedAreas.forEach(polygon => {
+                    ctx.beginPath();
+                    ctx.moveTo(polygon[0].x, polygon[0].y);
+                    polygon.forEach(point => ctx.lineTo(point.x, point.y));
+                    ctx.closePath();
+                    ctx.fill();
+                });
+
+                // 4. 그리는 중인 트레일 (색실)
+                if (player.isDrawing && player.trail.length > 1) {
+                    ctx.strokeStyle = PLAYER_TRAIL_COLOR;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(player.trail[0].x, player.trail[0].y);
+                    player.trail.forEach(point => ctx.lineTo(point.x, point.y));
+                    ctx.stroke();
+                }
+
+                // 5. 플레이어 (리듬의 정령 💠)
+                ctx.fillStyle = PLAYER_TRAIL_COLOR;
+                ctx.beginPath();
+                ctx.moveTo(player.x, player.y - PLAYER_SIZE / 2); // 위쪽 꼭짓점
+                ctx.lineTo(player.x + PLAYER_SIZE / 2, player.y);
+                ctx.lineTo(player.x, player.y + PLAYER_SIZE / 2);
+                ctx.lineTo(player.x - PLAYER_SIZE / 2, player.y);
+                ctx.closePath();
+                ctx.fill();
+
+                // 6. 적 (불협화음 💥)
+                ctx.fillStyle = ENEMY_COLOR;
+                enemies.forEach(enemy => {
+                    // ctx.fillRect(enemy.x, enemy.y, ENEMY_SIZE, ENEMY_SIZE);
+                    // 텍스트(이모지)로 그리기
+                    ctx.font = `${ENEMY_SIZE}px Arial`;
+                    ctx.fillText('💥', enemy.x, enemy.y + ENEMY_SIZE);
+                });
+
+                // 7. UI (점수, 목숨)
+                ctx.fillStyle = "white";
+                ctx.font = "20px Arial";
+                ctx.textAlign = "right";
+                ctx.fillText(`Score: ${score}`, VIEWPORT_WIDTH - 20, 30);
+                
+                ctx.textAlign = "left";
+                ctx.fillText(`Lives: ${'💠'.repeat(lives)}`, 20, 30);
+            }
+        });
+    </script>
+
+</body>
+</html>
